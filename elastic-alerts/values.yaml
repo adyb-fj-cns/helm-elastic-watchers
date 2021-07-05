@@ -1,0 +1,127 @@
+# Default values for elastic-alerts.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+elasticsearch:
+  url: https://quickstart-es-http:9200
+
+schedule: "*/1 * * * *"
+debug:
+  keepalive: true
+  fail: false
+
+script:
+  debug: true
+  file: update-watchers.sh
+
+environment: ci
+namespace: ci-ns
+
+webhook:
+  host: hooks.slack.com
+  path: services/T7T0C1BU6/BEQ1SSB6U/eWzXKRS9DlmgGHQdFQW4nW5w
+  method: post
+  port: 443
+  scheme: https
+
+notifications:
+  slack:
+    username: CI Log Alerts
+    emoji: ":floppy_disk:"
+    dashboard:
+      baseUrl: https://localhost:5601/app/kibana#/dashboard
+
+services:
+  - name: demo-service
+    label: some errors
+    threshold: 1
+    interval: 5m
+    search: error
+    errors:
+      - ERROR_001
+    actions:
+      - slack
+    #  - index
+    slack:
+      message: Something happened
+      dashboard:
+        urlPath: /
+        linkText: View the troublesome logs causing this horrible outage
+
+  #- name: example-service
+  #  threshold: 1
+  #  interval: 5m
+  #  search: error
+  #  errors:
+  #    - ERROR_001
+  #    - ERROR_002
+  #  actions:
+    #  - index
+    #  - slack
+  #  slack:
+  #    message: Something happened
+  #    dashboard:
+  #      urlPath: /
+  #      linkText: View the troublesome logs causing this horrible outage
+
+
+
+
+
+
+
+
+
+replicaCount: 1
+
+image:
+  #repository: adybfjcns/ansible
+  repository: curl-docker
+  pullPolicy: IfNotPresent
+  # Overrides the image tag whose default is the chart appVersion.
+  #tag: "latest"
+  tag: ""
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: true
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podAnnotations: {}
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

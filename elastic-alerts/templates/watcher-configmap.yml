@@ -1,0 +1,36 @@
+{{- $environment := .Values.environment -}}
+{{- range .Values.services }}
+{{- $service := . -}}
+{{- $actions := .actions -}}
+{{- $counter := int (sub (len $actions) 1) -}}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: watcher-{{ .name }}
+data:
+  {{ .name }}.watcher.json: |
+    {
+      "metadata" : {
+        "name" : "{{ $environment }} :: {{ .name }}"
+      },
+      "trigger": {
+        {{- include "interval.triggers" (list $ .) | indent 8 }}
+      },
+      "input": {
+        {{- $search := print .search ".inputs" -}}
+        {{- include $search (list $ .) | indent 8 }}
+      },
+      "condition": {
+        {{- include "threshold.conditions" (list $ .) | indent 8 }}
+      },
+      "actions": {
+        {{- range $index, $e := until $counter }}
+        {{- $action := print (index $actions $index) ".actions" -}}
+        {{- include $action (list $ . $service ) | indent 8 }},
+        {{- end }}
+        {{- $action := print (index $actions $counter) ".actions" -}}
+        {{- include $action (list $ . $service ) | indent 8 }}
+      }
+    }
+---
+{{- end }}

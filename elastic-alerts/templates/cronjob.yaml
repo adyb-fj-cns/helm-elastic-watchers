@@ -1,0 +1,65 @@
+apiVersion: batch/v1beta1
+kind: CronJob
+metadata:
+  name: update-elastic-watchers
+spec:
+  {{- if .Values.debug.keepalive }}
+  schedule: "0 0 * * *"
+  {{- else }}
+  schedule: {{ .Values.schedule | quote }}
+  {{- end }}
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          volumes:
+          - configMap:
+              defaultMode: 365
+              name: watcher-scripts
+            name: watcher-scripts
+          {{- range .Values.services }}
+          - configMap:
+              defaultMode: 365
+              name: watcher-{{ .name }}
+            name: watcher-{{ .name }}
+          {{- end }}
+          containers:
+          - name: update-with-curl
+            image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: ELASTIC_URL
+              value: {{ .Values.elasticsearch.url }}
+            - name: JSON_PATH
+              value: /etc/watchers/
+            - name: ELASTIC_USER
+              value: elastic
+            - name: ELASTIC_PASSWORD
+              value: 1M5O3I1EA689Ir3Svl5bpoM5
+            - name: ENVIRONMENT
+              value: {{ .Values.environment }}
+            - name: FLAGS
+              value: -k -s
+            - name: DEBUG
+              value: {{ .Values.script.debug | quote }}
+            command:
+            {{- if .Values.debug.keepalive }}
+              - "tail"
+              - "-f"
+              - "/dev/null"
+            {{- else if .Values.debug.fail }}
+              - /bin/false
+            {{- else }}
+              - /bin/sh
+              - -c
+              - /etc/watchers/scripts/{{ .Values.script.file }}
+            {{- end }}
+            volumeMounts:
+            - name: watcher-scripts
+              mountPath: /etc/watchers/scripts
+            {{- range .Values.services }}
+            - name: watcher-{{ .name }}
+              mountPath: /etc/watchers/{{ .name }}
+            {{- end }}
+          restartPolicy: OnFailure
+        backoffLimit: 4
